@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { AsyncExpectationResult, ExpectationResult } from 'expect'
 
 declare namespace matchers {
 	interface JestAIMatchers<E, R> {
@@ -10,7 +11,7 @@ declare namespace matchers {
 		 * expect('What is your name?').toSemanticallyMatch('Hello, I am a virtual assistant, let's start off with an introduction. What is your first name?')
 		 *
 		 */
-		toSemanticallyMatch(expected?: string): R
+		toSemanticallyMatch(expected?: string): AsyncExpectationResult
 		/**
 		 * @description
 		 * Assert whether a tool has been used in the AI response
@@ -19,7 +20,7 @@ declare namespace matchers {
 		 * expect(() => callLLM()).toHaveUsedSomeTools(['get_flight_information'])
 		 *
 		 */
-		toHaveUsedSomeTools(expected?: string[]): R
+		toHaveUsedSomeTools(expected?: string[]): AsyncExpectationResult
 		/**
 		 * @description
 		 * Assert whether all tools in the list were used in the AI response
@@ -28,7 +29,7 @@ declare namespace matchers {
 		 * expect(() => callLLM()).toHaveUsedAllTools(['get_flight_information', 'get_flight_status'])
 		 *
 		 */
-		toHaveUsedAllTools(expected?: string[]): R
+		toHaveUsedAllTools(expected?: string[]): AsyncExpectationResult
 		/**
 		 * @description
 		 * Assert whether an AI response matches a Zod schema
@@ -37,7 +38,7 @@ declare namespace matchers {
 		 * expect(llmResponse).toMatchZodSchema(z.Object({ name: z.string(), age: z.number() }))
 		 *
 		 */
-		toMatchZodSchema(expected?: z.Schema<any, any>): R
+		toMatchZodSchema(expected?: z.Schema<any, any>): ExpectationResult
 		/**
 		 * @description
 		 * Assert whether an AI response satisfies a true or false statement
@@ -46,12 +47,12 @@ declare namespace matchers {
 		 * expect(llmResponse).toSatisfyStatement('It contains a question asking for your flight number.')
 		 *
 		 */
-		toSatisfyStatement(expected?: string): R
+		toSatisfyStatement(expected?: string): AsyncExpectationResult
 	}
 }
 
 // Needs to extend Record<string, any> to be accepted by expect.extend()
 // as it requires a string index signature.
-declare const matchers: matchers.JestAIMatchers<any, void> &
+declare const matchers: matchers.JestAIMatchers<any, AsyncExpectationResult | ExpectationResult> &
 	Record<string, any>
 export = matchers
