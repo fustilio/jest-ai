@@ -1,13 +1,14 @@
-import { getMatchers } from "../utils/matcher-utils";
+import { SatisfiesStatementMatcherConfig, getMatchers } from "../utils/matcher-utils";
 import { MatcherUtils } from "expect";
 
 export async function toSatisfyStatement(
   this: MatcherUtils,
   received: string,
-  expected: string
+  expected: string,
+  config?: SatisfiesStatementMatcherConfig
 ) {
   const matchers = getMatchers();
-  const pass = await matchers.satisfiesStatement(expected, received);
+  const pass = await matchers.satisfiesStatement(expected, received, config);
 
   if (pass) {
     return {

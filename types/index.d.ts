@@ -12,7 +12,7 @@ declare module 'jest-ai' {
         toHaveUsedSomeAssistantTools(received: Run, expectedTools: string[] | RequiredActionFunctionToolCall.Function[]): AsyncExpectationResult;
         toHaveUsedSomeTools(received: () => Promise<ChatCompletion>, expectedTools: string[]): AsyncExpectationResult;
         toMatchZodSchema(received: z.Schema<any, any>, expected: string): ExpectationResult;
-        toSatisfyStatement(received: string, expected: string): AsyncExpectationResult;
+        toSatisfyStatement(received: string, expected: string, config: any): AsyncExpectationResult;
         toSemanticallyMatch(received: string, expected: string): AsyncExpectationResult;
     };
 }

@@ -17,8 +17,13 @@ import { matchToolCallsToExpectedTools } from "./utils";
 import { ChatOpenAI } from "@langchain/openai";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
+export type SatisfiesStatementMatcherConfig =  {
+  model?: string;
+  mode?: "narrow" | "broad";
+}
+
 export function getMatchers() {
-  const embeddings = Embeddings.getInstance()
+  const embeddings = Embeddings.getInstance();
 
   async function semanticMatcher(
     rank: Similarity,
@@ -101,8 +106,9 @@ export function getMatchers() {
   async function satisfiesStatementMatcher(
     statement: string,
     actual: string,
-    model: string = "gpt-4-turbo" // gtp-3.5-turbo does an awful job with this task unfortunately
+    config: SatisfiesStatementMatcherConfig = {}
   ): Promise<boolean> {
+    const { model = "gpt-4-turbo", mode = "narrow" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
     const openai = new ChatOpenAI({
       model,
       temperature: 0,
@@ -111,26 +117,32 @@ export function getMatchers() {
       SystemMessagePromptTemplate.fromTemplate(
         `
           You are a comprehension utility that confirms whether or not a given statement is true within some context.
-          The user will provide a statement. Using ONLY the provided context, you will determine if the statement is true or false.
+          The user will provide a statement. Using ${
+            mode === "narrow" ? "ONLY" : ""
+          } the provided context, you will determine if the statement is true or false.
           The context that you will analyse is provided below between the "---" characters.
           You will respond with only the text "true" or "false" and with no other characters or words.
           If the answer to the truthiness of the statement cannot be found within the context, respond with "false".
-          ONLY USE INFORMATION FOUND WITHIN THE CONTEXT TO ANSWER THE QUESTION
+          ${
+            mode === "narrow"
+              ? "ONLY USE INFORMATION FOUND WITHIN THE CONTEXT TO ANSWER THE QUESTION"
+              : ""
+          }
           ---
           ${actual}
           ---
-        `,
+        `
       ),
       HumanMessagePromptTemplate.fromTemplate(
-        `Within the provided context, is the following statement true or false: ${statement}`,
+        `Within the provided context, is the following statement true or false: ${statement}`
       ),
-    ])
+    ]);
 
     const chain = message.pipe(openai).pipe(new StringOutputParser());
 
-    const completion = await chain.invoke({})
+    const completion = await chain.invoke({});
 
-    return completion === 'true'
+    return completion === "true";
   }
 
   return {
