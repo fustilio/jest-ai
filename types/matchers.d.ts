@@ -47,7 +47,8 @@ declare namespace matchers {
 		 * expect(llmResponse).toSatisfyStatement('It contains a question asking for your flight number.')
 		 *
 		 */
-		toSatisfyStatement(expected?: string, config: any): AsyncExpectationResult
+		toSatisfyStatement(expected?: string, config?: any): AsyncExpectationResult
+		toBeFactual(config?: any): AsyncExpectationResult
 	}
 }
 
