@@ -48,6 +48,7 @@ declare namespace matchers {
 		 *
 		 */
 		toSatisfyStatement(expected?: string, config: any): AsyncExpectationResult
+		toBeFactuallyTrue(config: any): AsyncExpectationResult
 	}
 }
 

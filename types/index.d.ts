@@ -14,5 +14,6 @@ declare module 'jest-ai' {
         toMatchZodSchema(received: z.Schema<any, any>, expected: string): ExpectationResult;
         toSatisfyStatement(received: string, expected: string, config: any): AsyncExpectationResult;
         toSemanticallyMatch(received: string, expected: string): AsyncExpectationResult;
+        toBeFactuallyTrue(received: string, config: any): AsyncExpectationResult;
     };
 }

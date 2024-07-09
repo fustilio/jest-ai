@@ -17,10 +17,42 @@ import { matchToolCallsToExpectedTools } from "./utils";
 import { ChatOpenAI } from "@langchain/openai";
 import { StringOutputParser } from "@langchain/core/output_parsers";
 
-export type SatisfiesStatementMatcherConfig =  {
+type AIMatcherConfig = {
   model?: string;
+};
+
+export type SatisfiesStatementMatcherConfig = AIMatcherConfig & {
   mode?: "narrow" | "broad";
-}
+};
+
+export type FactuallyTrueConfig = AIMatcherConfig & { additionalContext?: string }
+
+const ACTUAL_CONTEXT_PLACEHOLDER_KEY = "ACTUAL";
+const STATEMENT_PLACEHOLDER_KEY = "STATEMENT";
+
+const SATISFIES_STATEMENT_SYSTEM_PROMPT = `You are a comprehension utility that confirms whether or not a given statement is true within some context.
+The user will provide a statement. Using ONLY the provided context, you will determine if the statement is true or false.
+The context that you will analyse is provided below between the "---" characters.
+You will respond with only the text "true" or "false" and with no other characters or words.
+If the answer to the truthiness of the statement cannot be found within the context, respond with "false".
+ONLY USE INFORMATION FOUND WITHIN THE CONTEXT TO ANSWER THE QUESTION
+
+---
+{${ACTUAL_CONTEXT_PLACEHOLDER_KEY}}
+---`;
+
+const SATISFIES_STATEMENT_BROAD_SYSTEM_PROMPT = `You are a comprehension utility that confirms whether or not a given statement is true within some context.
+The user will provide a statement. Using all the information you can access and know, you will determine if the statement is true or false.
+There may be additional context provided below between the "---" characters.
+You will respond with only the text "true" or "false" and with no other characters or words.
+If the answer to the truthiness of the statement cannot be determined, respond with "false".
+
+---
+{${ACTUAL_CONTEXT_PLACEHOLDER_KEY}}
+---`;
+
+const SATISFIES_STATEMENT_HUMAN_PROMPT = `Within the provided context, is the following statement true or false: {${STATEMENT_PLACEHOLDER_KEY}}`;
+const SATISFIES_STATEMENT_BROAD_HUMAN_PROMPT = `Is the following statement true or false: {${STATEMENT_PLACEHOLDER_KEY}}`;
 
 export function getMatchers() {
   const embeddings = Embeddings.getInstance();
@@ -113,34 +145,67 @@ export function getMatchers() {
       model,
       temperature: 0,
     });
-    const message = ChatPromptTemplate.fromMessages([
-      SystemMessagePromptTemplate.fromTemplate(
-        `
-          You are a comprehension utility that confirms whether or not a given statement is true within some context.
-          The user will provide a statement. Using ${
-            mode === "narrow" ? "ONLY" : ""
-          } the provided context, you will determine if the statement is true or false.
-          The context that you will analyse is provided below between the "---" characters.
-          You will respond with only the text "true" or "false" and with no other characters or words.
-          If the answer to the truthiness of the statement cannot be found within the context, respond with "false".
-          ${
-            mode === "narrow"
-              ? "ONLY USE INFORMATION FOUND WITHIN THE CONTEXT TO ANSWER THE QUESTION"
-              : ""
-          }
-          ---
-          ${actual}
-          ---
-        `
-      ),
-      HumanMessagePromptTemplate.fromTemplate(
-        `Within the provided context, is the following statement true or false: ${statement}`
-      ),
-    ]);
 
-    const chain = message.pipe(openai).pipe(new StringOutputParser());
+    const messages = new ChatPromptTemplate({
+      promptMessages: [
+        SystemMessagePromptTemplate.fromTemplate(
+          mode === "narrow"
+            ? SATISFIES_STATEMENT_SYSTEM_PROMPT
+            : SATISFIES_STATEMENT_BROAD_SYSTEM_PROMPT
+        ),
+        HumanMessagePromptTemplate.fromTemplate(
+          mode === "narrow"
+            ? SATISFIES_STATEMENT_HUMAN_PROMPT
+            : SATISFIES_STATEMENT_BROAD_HUMAN_PROMPT
+        ),
+      ],
+      inputVariables: [
+        ACTUAL_CONTEXT_PLACEHOLDER_KEY,
+        STATEMENT_PLACEHOLDER_KEY,
+      ],
+    });
 
-    const completion = await chain.invoke({});
+    const chain = messages.pipe(openai).pipe(new StringOutputParser());
+
+    const completion = await chain.invoke({
+      [ACTUAL_CONTEXT_PLACEHOLDER_KEY]: actual,
+      [STATEMENT_PLACEHOLDER_KEY]: statement,
+    });
+
+    return completion === "true";
+  }
+
+  async function factuallyTrueMatcher(
+    actual: string,
+    config: FactuallyTrueConfig = {}
+  ): Promise<boolean> {
+    const { model = "gpt-4-turbo", additionalContext = "" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
+    const openai = new ChatOpenAI({
+      model,
+      temperature: 0,
+    });
+
+    const messages = new ChatPromptTemplate({
+      promptMessages: [
+        SystemMessagePromptTemplate.fromTemplate(
+          SATISFIES_STATEMENT_BROAD_SYSTEM_PROMPT
+        ),
+        HumanMessagePromptTemplate.fromTemplate(
+          SATISFIES_STATEMENT_BROAD_HUMAN_PROMPT
+        ),
+      ],
+      inputVariables: [
+        ACTUAL_CONTEXT_PLACEHOLDER_KEY,
+        STATEMENT_PLACEHOLDER_KEY,
+      ],
+    });
+
+    const chain = messages.pipe(openai).pipe(new StringOutputParser());
+
+    const completion = await chain.invoke({
+      [ACTUAL_CONTEXT_PLACEHOLDER_KEY]: actual,
+      [STATEMENT_PLACEHOLDER_KEY]: additionalContext,
+    });
 
     return completion === "true";
   }
@@ -152,5 +217,6 @@ export function getMatchers() {
     tools: toolsMatcher,
     assistantTools: assistantToolsMatcher,
     satisfiesStatement: satisfiesStatementMatcher,
+    factuallyTrue: factuallyTrueMatcher,
   };
 }

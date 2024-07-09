@@ -75,4 +75,23 @@ maybe("satisfy statement", () => {
     );
     expect(pass).toEqual(true);
   });
+
+  // it.only("custom", async () => {
+  //   const matchers = getMatchers();
+  //   const pass = await matchers.satisfiesStatement(
+  //     "2+3+4+6=5+10",
+  //     "2+3=5\n4+6=10\n5+10=15",
+  //     // {
+  //     //   'mode': 'broad'
+  //     // }
+  //   );
+  //   expect(pass).toEqual(true);
+  // });
+  it.only("passes when the information matches what is globally correct, despite the statement being ", async () => {
+    const matchers = getMatchers();
+    const pass = await matchers.factuallyTrue(
+      "The capital of France is Paris.",
+    );
+    expect(pass).toEqual(true);
+  });
 });
