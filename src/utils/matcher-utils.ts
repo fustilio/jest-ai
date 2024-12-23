@@ -14,8 +14,8 @@ import type {
   Run,
 } from "openai/src/resources/beta/threads/runs";
 import { matchToolCallsToExpectedTools } from "./utils";
-import { ChatOpenAI } from "@langchain/openai";
 import { StringOutputParser } from "@langchain/core/output_parsers";
+import { getLLMConstructorAndConfig } from "../llms/generic-llm";
 
 type AIMatcherConfig = {
   model?: string;
@@ -25,7 +25,9 @@ export type SatisfiesStatementMatcherConfig = AIMatcherConfig & {
   mode?: "narrow" | "broad";
 };
 
-export type FactuallyTrueConfig = AIMatcherConfig & { additionalContext?: string }
+export type FactuallyTrueConfig = AIMatcherConfig & {
+  additionalContext?: string;
+};
 
 const ACTUAL_CONTEXT_PLACEHOLDER_KEY = "ACTUAL";
 const STATEMENT_PLACEHOLDER_KEY = "STATEMENT";
@@ -140,8 +142,14 @@ export function getMatchers() {
     actual: string,
     config: SatisfiesStatementMatcherConfig = {}
   ): Promise<boolean> {
-    const { model = "gpt-4-turbo", mode = "narrow" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
-    const openai = new ChatOpenAI({
+    const { model, mode = "narrow" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
+
+    const { ChatLLM, defaultConfig } = getLLMConstructorAndConfig({
+      llm: "gemini",
+    });
+
+    const openai = new ChatLLM({
+      ...defaultConfig,
       model,
       temperature: 0,
     });
@@ -179,8 +187,14 @@ export function getMatchers() {
     actual: string,
     config: FactuallyTrueConfig = {}
   ): Promise<boolean> {
-    const { model = "gpt-4-turbo", additionalContext = "" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
-    const openai = new ChatOpenAI({
+    const { model, additionalContext = "" } = config; // gtp-3.5-turbo does an awful job with this task unfortunately}
+    
+    const { ChatLLM, defaultConfig } = getLLMConstructorAndConfig({
+      llm: "gemini",
+    });
+
+    const openai = new ChatLLM({
+      ...defaultConfig,
       model,
       temperature: 0,
     });

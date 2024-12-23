@@ -16,7 +16,11 @@ function hasAzureKey() {
   );
 }
 
-const maybe = hasOpenAIKey() || hasAzureKey() ? describe : describe.skip;
+function hasGeminiKey() {
+  return !!process.env.GOOGLE_API_KEY;
+}
+
+const maybe = hasOpenAIKey() || hasAzureKey() || hasGeminiKey() ? describe : describe.skip;
 
 maybe("satisfy statement", () => {
   it("passes when the information clearly matches", async () => {

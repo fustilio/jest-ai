@@ -1,6 +1,6 @@
 {
   "name": "jest-ai",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Custom jest matchers for testing AI applications",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
@@ -61,7 +61,8 @@
   ],
   "dependencies": {
     "@jest/globals": ">= 28",
-    "@langchain/openai": "^0.3.0",
+    "@langchain/google-genai": "^0.1.6",
+    "@langchain/openai": "^0.3.16",
     "openai": "^4.38.2",
     "zod": "^3.22.5"
   },
